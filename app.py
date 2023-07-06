@@ -17,7 +17,7 @@ def preprocess(text, tokenizer, model):
         last_hidden_states = outputs[0][:, 0, :]
     return last_hidden_states.numpy().reshape(1, -1)
 
-def recommend_posts(user_name, post_embeddings, n=10):
+def recommend_posts(user_name, post_embeddings, df, n=10):
     # Get embeddings for user's posts
     user_posts = df[df['name'] == user_name]['content']
     user_post_embeddings = []
@@ -75,13 +75,7 @@ def main():
                     post_embeddings.append(preprocess(post, tokenizer, model))
                 post_embeddings = np.concatenate(post_embeddings, axis=0)  # Add this line to concatenate embeddings
                 
-                user_profile_embedding = preprocess(
-                    ' '.join(df[df['name'] == user_name]['content'].values.tolist()),
-                    tokenizer,
-                    model
-                )
-
-                recommendations = recommend_posts(user_name, post_embeddings, n=10)
+                recommendations = recommend_posts(user_name, post_embeddings, df, n=10)  # Pass df as a parameter
                 st.table(recommendations[0])
             else:
                 st.warning("Please enter a user name.")
@@ -89,3 +83,5 @@ def main():
 if __name__ == '__main__':
     main()
 
+     
+    
