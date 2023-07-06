@@ -4,18 +4,6 @@ import numpy as np
 import torch
 from transformers import BertTokenizer, BertModel
 
-# Step 1: Collect data
-df = pd.read_csv('/content/influencers_data_cleaned2.csv', engine="python", error_bad_lines=False)
-df = df.dropna()
-df = df.reset_index()
-df['content'] = df['content'].astype('string')
-df['name'] = df['name'].astype('string')
-df = df[:5000]
-
-# Step 2: Preprocess data
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-model = BertModel.from_pretrained('bert-base-uncased')
-
 def preprocess(text):
     # Remove unnecessary characters
     text = str(text).replace('\n', ' ').replace('\r', '')
@@ -57,15 +45,39 @@ def recommend_posts(user_name, post_embeddings, n=10):
 
 def main():
     st.title("Post Recommender")
-    user_name = st.text_input("Enter user name:")
-    if st.button("Recommend"):
-        if user_name:
-            user_profile_embedding = preprocess(' '.join(df[df['name'] == user_name]['content'].values.tolist()))
-            recommendations = recommend_posts(user_name, post_embeddings, n=10)
-            st.subheader(f"Recommended posts for {user_name}:")
-            st.table(recommendations[0])
-        else:
-            st.warning("Please enter a user name.")
+
+    # File uploader
+    uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
+
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        
+        # Step 2: Preprocess data
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        model = BertModel.from_pretrained('bert-base-uncased')
+
+        # Step 1: Collect data
+        df = df.dropna()
+        df = df.reset_index()
+        df['content'] = df['content'].astype('string')
+        df['name'] = df['name'].astype('string')
+        df = df[:5000]
+
+        st.subheader("Recommendation Results")
+
+        user_name = st.text_input("Enter user name:")
+        if st.button("Recommend"):
+            if user_name:
+                post_embeddings = []  # Add this line to collect embeddings
+                for post in df['content']:
+                    post_embeddings.append(preprocess(post))
+                post_embeddings = np.concatenate(post_embeddings, axis=0)  # Add this line to concatenate embeddings
+                
+                user_profile_embedding = preprocess(' '.join(df[df['name'] == user_name]['content'].values.tolist()))
+                recommendations = recommend_posts(user_name, post_embeddings, n=10)
+                st.table(recommendations[0])
+            else:
+                st.warning("Please enter a user name.")
 
 if __name__ == '__main__':
     main()
