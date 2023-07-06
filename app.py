@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from transformers import BertTokenizer, BertModel
 
-def preprocess(text):
+def preprocess(text, tokenizer, model):
     # Remove unnecessary characters
     text = str(text).replace('\n', ' ').replace('\r', '')
     # Tokenize text into sequences of words
@@ -16,6 +16,7 @@ def preprocess(text):
         outputs = model(input_ids)
         last_hidden_states = outputs[0][:, 0, :]
     return last_hidden_states.numpy().reshape(1, -1)
+
 
 def recommend_posts(user_name, post_embeddings, n=10):
     # Get embeddings for user's posts
