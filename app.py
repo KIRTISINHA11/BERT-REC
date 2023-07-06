@@ -17,20 +17,21 @@ def preprocess(text, tokenizer, model):
         last_hidden_states = outputs[0][:, 0, :]
     return last_hidden_states.numpy().reshape(1, -1)
 
-
 def recommend_posts(user_name, post_embeddings, n=10):
     # Get embeddings for user's posts
     user_posts = df[df['name'] == user_name]['content']
     user_post_embeddings = []
     for post in user_posts:
-        user_post_embeddings.append(preprocess(post))
+        user_post_embeddings.append(preprocess(post, tokenizer, model))
     user_post_embeddings = np.concatenate(user_post_embeddings, axis=0)
 
     # Calculate mean embedding for user's posts
     user_profile_embedding = np.mean(user_post_embeddings, axis=0)
 
     # Calculate cosine similarity between user profile and all post embeddings
-    similarity_scores = np.dot(post_embeddings, user_profile_embedding.T) / (np.linalg.norm(post_embeddings, axis=1) * np.linalg.norm(user_profile_embedding))
+    similarity_scores = np.dot(post_embeddings, user_profile_embedding.T) / (
+        np.linalg.norm(post_embeddings, axis=1) * np.linalg.norm(user_profile_embedding)
+    )
 
     # Rank posts by similarity score
     rankings = np.argsort(np.ravel(similarity_scores))[::-1]
@@ -71,10 +72,15 @@ def main():
             if user_name:
                 post_embeddings = []  # Add this line to collect embeddings
                 for post in df['content']:
-                    post_embeddings.append(preprocess(post))
+                    post_embeddings.append(preprocess(post, tokenizer, model))
                 post_embeddings = np.concatenate(post_embeddings, axis=0)  # Add this line to concatenate embeddings
                 
-                user_profile_embedding = preprocess(' '.join(df[df['name'] == user_name]['content'].values.tolist()))
+                user_profile_embedding = preprocess(
+                    ' '.join(df[df['name'] == user_name]['content'].values.tolist()),
+                    tokenizer,
+                    model
+                )
+
                 recommendations = recommend_posts(user_name, post_embeddings, n=10)
                 st.table(recommendations[0])
             else:
@@ -82,3 +88,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
